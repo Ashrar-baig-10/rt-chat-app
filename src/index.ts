@@ -1,5 +1,14 @@
 import { server as WebSocketServer, connection } from "websocket";
 import http from "http";
+import {
+  SupportedMessage,
+  type IncomingMessage,
+} from "./messages/incomingMessages.js";
+import { SupportedMessage as OutgoingSupportedMessage } from "./messages/outgoingMessages.js";
+import { UserManager } from "./UserManager.js";
+import { Store } from "./store/Store.js";
+import { InMemoryStore } from "./store/inMemoryStore.js";
+
 // var WebSocketServer = require('websocket').server;
 // var http = require("http");
 
@@ -8,6 +17,10 @@ const server = http.createServer(function (request: any, response: any) {
   response.writeHead(404);
   response.end();
 });
+
+const userManager = new UserManager();
+const store = new InMemoryStore();
+
 server.listen(8080, function () {
   console.log(new Date() + " Server is listening on port 8080");
 });
@@ -41,8 +54,11 @@ wsServer.on("request", function (request) {
   console.log(new Date() + " Connection accepted.");
   connection.on("message", function (message) {
     if (message.type === "utf8") {
-      console.log("Received Message: " + message.utf8Data);
-      connection.sendUTF(message.utf8Data);
+      try {
+        messageHandler(connection, JSON.parse(message.utf8Data));
+      } catch (error) {}
+      // console.log("Received Message: " + message.utf8Data);
+      // connection.sendUTF(message.utf8Data);
     } else if (message.type === "binary") {
       console.log(
         "Received Binary Message of " + message.binaryData.length + " bytes",
@@ -56,3 +72,63 @@ wsServer.on("request", function (request) {
     );
   });
 });
+
+function messageHandler(ws: connection, message: IncomingMessage) {
+  if (message.type === SupportedMessage.JoinRoom) {
+    const payload = message.payload;
+    userManager.addUser(payload.name, payload.userId, payload.roomId, ws);
+  }
+  if (message.type === SupportedMessage.SendMessage) {
+    const payload = message.payload;
+    const user = userManager.getUser(payload.roomId, payload.userId);
+    if (!user) {
+      console.error("User not found in the db");
+      return;
+    }
+    let chat = store.addChat(
+      payload.userId,
+      user.name,
+      payload.roomId,
+      payload.message,
+    );
+    if (!chat) {
+      return;
+    }
+    //broadcast logic
+    const outgoingPayload = {
+      type: OutgoingSupportedMessage.AddChat,
+      payload: {
+        roomId: payload.roomId,
+        message: payload.message,
+        name: user.name,
+        upvotes: 0,
+        chatId: chat.id,
+      },
+    };
+    userManager.broadcast(payload.roomId, payload.userId, outgoingPayload);
+  }
+  if (message.type === SupportedMessage.UpvoteMessage) {
+    const payload = message.payload;
+    const chat = store.upvote(payload.userId, payload.roomId, payload.chatId);
+    if (!chat) {
+      return;
+    }
+    const user = userManager.getUser(payload.roomId, payload.userId);
+    if (!user) {
+      console.error("User not found in the db");
+      return;
+    }
+    const outgoingPayload = {
+      type: OutgoingSupportedMessage.UpdateChat,
+      payload: {
+        roomId: payload.roomId,
+        chatId: payload.chatId,
+        upvotes: chat.upvotes.length,
+        //not including name and message gives error
+        name: user.name,
+        message: "",
+      },
+    };
+    userManager.broadcast(payload.roomId, payload.userId, outgoingPayload);
+  }
+}

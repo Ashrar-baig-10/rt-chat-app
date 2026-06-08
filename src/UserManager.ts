@@ -1,6 +1,9 @@
+import type { connection } from "websocket";
+import { type OutgoingMessage } from "./messages/outgoingMessages.js";
 interface User {
   name: string;
   id: string;
+  conn: connection;
 }
 
 interface Room {
@@ -13,7 +16,7 @@ export class UserManager {
     this.rooms = new Map<string, Room>();
   }
 
-  addUser(name: string, userId: string, roomId: string, socket: WebSocket) {
+  addUser(name: string, userId: string, roomId: string, socket: connection) {
     if (!this.rooms.get(roomId)) {
       this.rooms.set(roomId, {
         users: [],
@@ -22,6 +25,7 @@ export class UserManager {
     this.rooms.get(roomId)?.users.push({
       name,
       id: userId,
+      conn: socket,
     });
   }
   removeUser(roomId: string, userId: string) {
@@ -29,5 +33,25 @@ export class UserManager {
     if (users) {
       users.filter(({ id }) => id !== userId);
     }
+  }
+  getUser(roomId: string, userId: string): User | null {
+    const user = this.rooms.get(roomId)?.users.find(({ id }) => id === userId);
+    return user ?? null;
+  }
+
+  broadcast(roomId: string, userId: string, message: OutgoingMessage) {
+    const user = this.getUser(roomId, userId);
+    if (!user) {
+      console.error("User not found");
+      return;
+    }
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      console.error("Room nt found");
+      return;
+    }
+    room.users.forEach(({ conn }) => {
+      conn.sendUTF(JSON.stringify(message));
+    });
   }
 }

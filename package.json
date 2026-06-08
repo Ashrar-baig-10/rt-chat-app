@@ -15,7 +15,8 @@
   "type": "module",
   "dependencies": {
     "typescript": "^6.0.3",
-    "websocket": "^1.0.35"
+    "websocket": "^1.0.35",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
