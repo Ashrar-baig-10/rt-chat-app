@@ -15,10 +15,11 @@
   "type": "module",
   "dependencies": {
     "typescript": "^6.0.3",
-    "ws": "^8.21.0"
+    "websocket": "^1.0.35"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "@types/websocket": "^1.0.10",
     "@types/ws": "^8.18.1"
   }
 }
