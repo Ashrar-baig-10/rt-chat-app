@@ -23,7 +23,7 @@ export class InMemoryStore implements Store {
   getChats(roomId: string, limit: number, offset: number) {
     const room = this.store.get(roomId);
     if (!room) {
-      return [];
+      return;
     }
     return room.chats
       .reverse()
@@ -37,11 +37,13 @@ export class InMemoryStore implements Store {
     roomId: string,
     message: string,
   ): Chat | null {
+    if (!this.store.get(roomId)) {
+      this.initRoom(roomId);
+    }
     const room = this.store.get(roomId);
     if (!room) {
       return null;
     }
-
     const chat = {
       id: (globalChatId++).toString(),
       userId,

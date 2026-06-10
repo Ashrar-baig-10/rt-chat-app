@@ -50,7 +50,11 @@ export class UserManager {
       console.error("Room nt found");
       return;
     }
-    room.users.forEach(({ conn }) => {
+
+    room.users.forEach(({ conn, id }) => {
+      if (id === userId) {
+        return;
+      }
       conn.sendUTF(JSON.stringify(message));
     });
   }

@@ -1,14 +1,22 @@
-import { server as WebSocketServer, connection } from "websocket";
+import {
+  server as WebSocketServer,
+  type connection as Connection,
+} from "websocket";
 import http from "http";
 import {
   SupportedMessage,
   type IncomingMessage,
 } from "./messages/incomingMessages.js";
-import { SupportedMessage as OutgoingSupportedMessage } from "./messages/outgoingMessages.js";
+import {
+  SupportedMessage as OutgoingSupportedMessage,
+  type OutgoingMessage,
+} from "./messages/outgoingMessages.js";
 import { UserManager } from "./UserManager.js";
-import { Store } from "./store/Store.js";
 import { InMemoryStore } from "./store/inMemoryStore.js";
+// import websocket from "websocket";
 
+// const WebSocketServer = websocket.server;
+// type Connection = websocket.connection;
 // var WebSocketServer = require('websocket').server;
 // var http = require("http");
 
@@ -73,7 +81,7 @@ wsServer.on("request", function (request) {
   });
 });
 
-function messageHandler(ws: connection, message: IncomingMessage) {
+function messageHandler(ws: Connection, message: IncomingMessage) {
   if (message.type === SupportedMessage.JoinRoom) {
     const payload = message.payload;
     userManager.addUser(payload.name, payload.userId, payload.roomId, ws);
@@ -85,6 +93,7 @@ function messageHandler(ws: connection, message: IncomingMessage) {
       console.error("User not found in the db");
       return;
     }
+
     let chat = store.addChat(
       payload.userId,
       user.name,
@@ -105,6 +114,7 @@ function messageHandler(ws: connection, message: IncomingMessage) {
         chatId: chat.id,
       },
     };
+
     userManager.broadcast(payload.roomId, payload.userId, outgoingPayload);
   }
   if (message.type === SupportedMessage.UpvoteMessage) {
@@ -118,15 +128,15 @@ function messageHandler(ws: connection, message: IncomingMessage) {
       console.error("User not found in the db");
       return;
     }
-    const outgoingPayload = {
+    const outgoingPayload: OutgoingMessage = {
       type: OutgoingSupportedMessage.UpdateChat,
       payload: {
         roomId: payload.roomId,
         chatId: payload.chatId,
         upvotes: chat.upvotes.length,
         //not including name and message gives error
-        name: user.name,
-        message: "",
+        // name: user.name,
+        // message: "",
       },
     };
     userManager.broadcast(payload.roomId, payload.userId, outgoingPayload);

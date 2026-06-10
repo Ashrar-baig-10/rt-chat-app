@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    hello
+    <input type="text" id="inputtext" />
+    <button onclick="sendChat()">onclick</button>
+    <script>
+      const ws = new WebSocket("ws://localhost:8080", "echo-protocol");
+      ws.onopen = function () {
+        ws.send(
+          JSON.stringify({
+            type: "JOIN_ROOM",
+            payload: {
+              name: "ash",
+              userId: "1",
+              roomId: "2",
+            },
+          }),
+        );
+      };
+      ws.onmessage = function (payload) {
+        try {
+          console.log(JSON.parse(payload.data).payload.message);
+        } catch (error) {
+          console.log(error);
+        }
+      };
+      function sendChat() {
+        ws.send(
+          JSON.stringify({
+            type: "SEND_MESSAGE",
+            payload: {
+              userId: "1",
+              roomId: "2",
+              message: "wassup",
+            },
+          }),
+        );
+      }
+    </script>
+  </body>
+</html>
