@@ -74,11 +74,11 @@ wsServer.on("request", function (request) {
       connection.sendBytes(message.binaryData);
     }
   });
-  connection.on("close", function (reasonCode, description) {
-    console.log(
-      new Date() + " Peer " + connection.remoteAddress + " disconnected.",
-    );
-  });
+  // connection.on("close", function (reasonCode, description) {
+  //   console.log(
+  //     new Date() + " Peer " + connection.remoteAddress + " disconnected.",
+  //   );
+  // });
 });
 
 function messageHandler(ws: Connection, message: IncomingMessage) {
