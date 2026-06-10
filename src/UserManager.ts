@@ -27,12 +27,18 @@ export class UserManager {
       id: userId,
       conn: socket,
     });
+    socket.on("close", (reasonCode, description) => {
+      this.removeUser(roomId, userId);
+    });
   }
   removeUser(roomId: string, userId: string) {
+    console.log("Entered removeuser function");
+
     const users = this.rooms.get(roomId)?.users;
     if (users) {
       users.filter(({ id }) => id !== userId);
     }
+    console.log("Removeduser");
   }
   getUser(roomId: string, userId: string): User | null {
     const user = this.rooms.get(roomId)?.users.find(({ id }) => id === userId);
