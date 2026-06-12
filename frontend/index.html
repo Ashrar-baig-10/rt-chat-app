@@ -9,15 +9,17 @@
     hello
     <input type="text" id="inputtext" />
     <button onclick="sendChat()">onclick</button>
+    <div id="msgs"></div>
     <script>
       const ws = new WebSocket("ws://localhost:8080", "echo-protocol");
+      const userId = Math.floor(Math.random() * 1000);
       ws.onopen = function () {
         ws.send(
           JSON.stringify({
             type: "JOIN_ROOM",
             payload: {
               name: "ash",
-              userId: "1",
+              userId,
               roomId: "2",
             },
           }),
@@ -25,7 +27,16 @@
       };
       ws.onmessage = function (payload) {
         try {
-          console.log(JSON.parse(payload.data).payload.message);
+          const { type, payload: parsedpayload } = JSON.parse(payload.data);
+          const { name, message: msg, upvotes } = parsedpayload;
+          console.log(parsedpayload);
+
+          if (type === "ADD_CHAT") {
+            const textNode = document.createElement("p");
+            textNode.innerHTML = msg + `(${upvotes})`;
+            document.getElementById("msgs").appendChild(textNode);
+          }
+          // console.log(name, msg);
         } catch (error) {
           console.log(error);
         }
@@ -35,9 +46,9 @@
           JSON.stringify({
             type: "SEND_MESSAGE",
             payload: {
-              userId: "1",
+              userId,
               roomId: "2",
-              message: "wassup",
+              message: document.getElementById("inputtext").value,
             },
           }),
         );
